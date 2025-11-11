@@ -98,26 +98,64 @@ async def get_availability(start_date: str, end_date: str):
 #     }
 
 
+# @app.post("/scheduled_events")
+# async def create_booking():
+#     # Fetch user info first to get org URI if needed
+#     async with httpx.AsyncClient() as client:
+#         user_res = await client.get(f"{CALENDLY_API_BASE}/users/me", headers=HEADERS)
+#         user_res.raise_for_status()
+#         user_data = user_res.json()["resource"]
+
+#     organization_uri = user_data.get("organization")
+
+#     booking_payload = {
+#         "max_event_count": 1,
+#         "owner": USER_URI.strip('"').strip(),
+#         "owner_type": 'EventType',
+#         "event_type": EVENT_TYPE_URI.strip('"').strip()
+#     }
+
+#     if organization_uri:
+#         booking_payload["organization"] = organization_uri
+
+#     print("Payload sent to Calendly:", booking_payload)
+
+#     async with httpx.AsyncClient() as client:
+#         res = await client.post(
+#             f"{CALENDLY_API_BASE}/scheduling_links",
+#             headers=HEADERS,
+#             json=booking_payload
+#         )
+
+#         # Log the Calendly error text if non-200
+#         if res.status_code not in (200, 201):
+#             print("Calendly response error:", res.text)
+#         print("Calendly Response Status:", res.status_code)
+#         print("Calendly Response Body:", res.text)
+#         res.raise_for_status()
+#         data = res.json()["resource"]
+
+#     return {
+#         "message": "✅ Booking link created successfully",
+#         "booking_url": data["booking_url"],
+#         "event_type": data["event_type"],
+#         "owner": data["owner"],
+#         "owner_type": data.get("owner_type"),
+#         "organization": data.get("organization")
+#     }
+
+
 @app.post("/scheduled_events")
 async def create_booking():
-    # Fetch user info first to get org URI if needed
-    async with httpx.AsyncClient() as client:
-        user_res = await client.get(f"{CALENDLY_API_BASE}/users/me", headers=HEADERS)
-        user_res.raise_for_status()
-        user_data = user_res.json()["resource"]
-
-    organization_uri = user_data.get("organization")
+    """
+    ✅ Create a Calendly scheduling link for a specific event type.
+    """
 
     booking_payload = {
         "max_event_count": 1,
-        "owner": USER_URI.strip('"').strip(),
-        "owner_type": "User",
-        "event_type": EVENT_TYPE_URI.strip('"').strip()
+        "owner": EVENT_TYPE_URI.strip('"').strip(),
+        "owner_type": "EventType"  # ✅ must be EventType
     }
-
-    # Only include organization if it exists
-    if organization_uri:
-        booking_payload["organization"] = organization_uri
 
     print("Payload sent to Calendly:", booking_payload)
 
@@ -128,18 +166,16 @@ async def create_booking():
             json=booking_payload
         )
 
-        # Log the Calendly error text if non-200
-        if res.status_code not in (200, 201):
-            print("Calendly response error:", res.text)
+        print("Calendly Response Status:", res.status_code)
+        print("Calendly Response Body:", res.text)
 
         res.raise_for_status()
-        data = res.json()["resource"]
+
+    data = res.json()["resource"]
 
     return {
         "message": "✅ Booking link created successfully",
         "booking_url": data["booking_url"],
-        "event_type": data["event_type"],
         "owner": data["owner"],
-        "owner_type": data.get("owner_type"),
-        "organization": data.get("organization")
+        "owner_type": data["owner_type"]
     }
